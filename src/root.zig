@@ -92,7 +92,14 @@ test "CountMinSketch concurrency" {
 
     // Create threads that insert the same key multiple times
     for (&threads) |*thread| {
-        thread.* = try std.Thread.spawn(.{}, worker, .{ &cms, "concurrent_key", iterations });
+        thread.* = try std.Thread.spawn(.{}, struct {
+            fn worker(cms_ptr: *CountMinSketch, key: []const u8, count: usize) void {
+                var i: usize = 0;
+                while (i < count) : (i += 1) {
+                    cms_ptr.insert(key);
+                }
+            }
+        }.worker, .{ &cms, "concurrent_key", iterations });
     }
 
     // Wait for all threads to complete
